@@ -11,6 +11,12 @@ get('/signup', function($app) {
 });
 
 post('/signup', function($app) {
+    $user = new stdClass;
+    $user->type = 'user';
+    $user->name = $app->form('name');
+    $user->email = $app->form('email');
+    echo json_encode($user);
+    
     $app->set('message', 'Thanks for Signing Up ' . $app->form('name') . '!');
     $app->render('home');
 });
