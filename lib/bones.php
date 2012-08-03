@@ -27,6 +27,8 @@ class Bones {
     public $method = '';
     public $content = '';
     public $vars = array();
+    public $route_segments = array();
+    public $route_variables = array();
     
     public static function get_instance() {
         if (!isset(self::$instance)) {
@@ -37,11 +39,14 @@ class Bones {
     
     public function __construct() {
         $this->route = $this->get_route();
+        $this->route_segments = explode('/', trim($this->route, '/'));
+        //var_dump($this->route_segments);
         $this->method = $this->get_method();
     }
     
     protected function get_route() {
         parse_str($_SERVER['QUERY_STRING'], $route);
+        //var_dump($route);
         if ($route) {
             return '/' . $route['request'];
         } else {
@@ -70,15 +75,41 @@ class Bones {
     }
     
     public static function register($route, $callback, $method) {
-        $bones = self::get_instance();
-        if ($route == $bones->route && !self::$route_found && $bones->method == $method) {
-            self::$route_found = true;
-            echo $callback($bones);
-        } else {
-            return false;
+        if (!self::$route_found) {
+            $bones = self::get_instance();
+            $url_parts = explode('/', trim($route, '/'));
+            $matched = null;
+            if (count($bones->route_segments) == count($url_parts)) {
+                foreach ($url_parts as $key=>$part) {
+                    if (strpos($part, ":") !== false) {
+                        // Contains a route variable
+                        $bones->route_variables[substr($part, 1)] = $bones->route_segments[$key];
+                    } else {
+                        // Does not contain a route variable
+                        if ($part == $bones->route_segments[$key]) {
+                            if (!$matched) {
+                                // Routes match
+                                $matched = true;
+                            }
+                        } else {
+                            // Routes don't match
+                            $matched = false;
+                        }
+                    }
+                }
+            } else {
+                // Routes are different lengths
+                $matched = false;
+            }
+            if (!$matched || $bones->method != $method) {
+                return false;
+            } else {
+                self::$route_found = true;
+                echo $callback($bones);
+            }
         }
     }
-    
+             
     public function form($key) {
         return $_POST[$key];
     }
@@ -91,5 +122,9 @@ class Bones {
         } else {
             return '/' . $url[2] . $path;
         }
+    }
+    
+    public function request($key) {
+        return $this->route_variables[$key];
     }
 }
