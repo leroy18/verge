@@ -11,15 +11,16 @@ get('/signup', function($app) {
 });
 
 post('/signup', function($app) {
-    $user = new stdClass;
-    $user->type = 'user';
+    $user = new User();
     $user->name = $app->form('name');
     $user->email = $app->form('email');
-    echo json_encode($user);
+    //echo json_encode($user);
+    //var_dump($user);
+    $app->couch->post($user);
+    //$app->couch->post($user->to_json);
     
+    /*
     $curl = curl_init();
-    // curl options
-    // curl options
     $options = array(
         CURLOPT_URL => 'http://localhost:5984/verge',
         CURLOPT_POSTFIELDS => json_encode($user),
@@ -34,6 +35,7 @@ post('/signup', function($app) {
     curl_setopt_array($curl, $options);
     curl_exec($curl);
     curl_close($curl);
+    */
     
     $app->set('message', 'Thanks for Signing Up ' . $app->form('name') . '!');
     $app->render('home');
